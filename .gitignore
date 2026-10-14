@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.safetensors
+*.mp4
+*.mov
+output/
+.DS_Store
+Thumbs.db

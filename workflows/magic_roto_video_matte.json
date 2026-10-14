@@ -1,0 +1,21 @@
+{
+  "1": {"class_type": "LoadVideo", "inputs": {"file": "magic_roto_input.mp4"}, "_meta": {"title": "1. Load Video (put your clip in ComfyUI/input)"}},
+  "2": {"class_type": "GetVideoComponents", "inputs": {"video": ["1", 0]}, "_meta": {"title": "Split into frames"}},
+  "3": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sam3.1_multiplex_fp16.safetensors"}, "_meta": {"title": "2. Load SAM3"}},
+  "4": {"class_type": "CLIPTextEncode", "inputs": {"text": "person", "clip": ["3", 1]}, "_meta": {"title": "What to cut out (text prompt)"}},
+  "5": {"class_type": "SAM3_VideoTrack", "inputs": {"images": ["2", 0], "model": ["3", 0], "detection_threshold": 0.4, "max_objects": 1, "detect_interval": 1, "conditioning": ["4", 0]}, "_meta": {"title": "3. SAM3: track through the video"}},
+  "6": {"class_type": "SAM3_TrackToMask", "inputs": {"track_data": ["5", 0], "object_indices": ""}, "_meta": {"title": "Hard mask per frame"}},
+  "7": {"class_type": "VitMatteTrimap", "inputs": {"mask": ["6", 0], "erode_px": 8, "dilate_px": 20}, "_meta": {"title": "4. Build trimap"}},
+  "8": {"class_type": "VitMatteRefine", "inputs": {"image": ["2", 0], "trimap": ["7", 0], "model_name": "vitmatte-small-composition-1k", "max_side": 1280, "white_point": 0.99}, "_meta": {"title": "5. VitMatte: refine edges"}},
+  "9": {"class_type": "MatteTemporalSmooth", "inputs": {"alpha": ["8", 0], "strength": 0.4, "motion_threshold": 0.25, "trimap": ["7", 0]}, "_meta": {"title": "6. Calm edge flicker"}},
+  "10": {"class_type": "MaskToImage", "inputs": {"mask": ["9", 0]}},
+  "11": {"class_type": "SaveImage", "inputs": {"images": ["10", 0], "filename_prefix": "magic_roto/alpha"}, "_meta": {"title": "7. Save alpha PNG sequence (import into Resolve)"}},
+  "12": {"class_type": "CreateVideo", "inputs": {"images": ["10", 0], "fps": ["2", 2]}},
+  "13": {"class_type": "SaveVideo", "inputs": {"video": ["12", 0], "filename_prefix": "magic_roto/alpha_preview", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: refined matte"}},
+  "14": {"class_type": "MattePreviewOnColor", "inputs": {"image": ["2", 0], "alpha": ["9", 0], "color": "#00FF00"}, "_meta": {"title": "Cut-out on green"}},
+  "16": {"class_type": "CreateVideo", "inputs": {"images": ["14", 0], "fps": ["2", 2]}},
+  "17": {"class_type": "SaveVideo", "inputs": {"video": ["16", 0], "filename_prefix": "magic_roto/on_green", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: cut-out on green"}},
+  "18": {"class_type": "MaskToImage", "inputs": {"mask": ["6", 0]}},
+  "19": {"class_type": "CreateVideo", "inputs": {"images": ["18", 0], "fps": ["2", 2]}},
+  "20": {"class_type": "SaveVideo", "inputs": {"video": ["19", 0], "filename_prefix": "magic_roto/sam_raw", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: raw SAM3 mask (before VitMatte)"}}
+}

@@ -1,0 +1,40 @@
+# Settings reference
+
+## Run SAM3 Video Track (core ComfyUI node)
+
+| Setting | Default in workflow | What it does | When to change it |
+|---|---|---|---|
+| `detection_threshold` | 0.4 | How confident SAM3 must be to accept an object | Raise it (0.5–0.6) if it picks wrong things. Lower it (0.3) if it misses the subject |
+| `max_objects` | 1 | How many objects to keep | Raise it for several people or a prompt with several items |
+| `detect_interval` | 1 | Re-detect every N frames | Keep it at 1 for clips with cuts. 2–5 is faster on single continuous shots |
+
+Text prompt (the **What to cut out** node): a short noun phrase. Separate several subjects with commas; `word:N` caps the count for that word.
+
+## MAGIC ROTO: Mask to Trimap
+
+| Setting | Default | What it does | Tips |
+|---|---|---|---|
+| `erode_px` | 8 | Shrinks the mask inward. Whatever stays is "definitely object" | Increase it if the edge of the mask is wrong or halo-y |
+| `dilate_px` | 20 | Grows the mask outward. Beyond it is "definitely background" | **5–10** for hard edges (products, cars) · **20–40** for hair, fur, glow, motion blur |
+
+## MAGIC ROTO: Refine Edges
+
+| Setting | Default | What it does | Tips |
+|---|---|---|---|
+| `model_name` | vitmatte-small-composition-1k | Which VitMatte model in `models/vitmatte/` to use | Any VitMatte folder with a `config.json` shows up here |
+| `max_side` | 1280 | Long side the frame is scaled to for VitMatte | Lower it (960) if you get out-of-memory errors. Raise it (1920) for 4K detail if you have VRAM |
+| `white_point` | 0.99 | Alpha above this becomes solid 1.0 | Use 0.95 if the interior still looks semi-transparent |
+
+## MAGIC ROTO: Temporal Smooth
+
+| Setting | Default | What it does | Tips |
+|---|---|---|---|
+| `strength` | 0.4 | How much of the previous frame is blended in (0 = off) | 0.2–0.4 for moving subjects · 0.5–0.7 for locked-off, slow shots |
+| `motion_threshold` | 0.25 | Alpha changes larger than this count as real motion and are not blended | Lower it if you see trails on fast motion |
+| `trimap` (optional input) | connected | Limits smoothing to the edge band | Keep it connected so the solid interior is never touched |
+
+## MAGIC ROTO: Preview on Colour
+
+| Setting | Default | What it does |
+|---|---|---|
+| `color` | `#00FF00` | Background colour for the preview cut-out. Try `#000000` or `#FFFFFF` to check edges against dark and light backgrounds |

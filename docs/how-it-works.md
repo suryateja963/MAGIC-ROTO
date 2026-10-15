@@ -64,6 +64,22 @@ Real motion passes through untouched; small jitter is damped.
 - `SaveImage` writes the matte as a numbered **PNG sequence**, which is the deliverable.
 - Three `SaveVideo` nodes write previews: the matte, the cut-out on green, and the raw SAM3 mask.
 
+## Image workflow: how clicks, boxes and text work together
+
+ComfyUI's core `SAM3 Detect` node accepts text, boxes and points, but on its own they interfere:
+when text is present, boxes stop being objects and only limit where the text is searched; and an empty text box still counts as a text prompt.
+
+`MAGIC ROTO: Select Objects` avoids this by calling SAM3 **separately for each prompt type**:
+
+1. **Points** (if any): all include/exclude clicks → one mask.
+2. **Boxes** (if any): run without text, so each box → its own mask.
+3. **Text** (only if the field isn't empty): each match → its own mask.
+
+The masks are stacked into one batch (one entry per object) and flow through the same trimap → VitMatte steps.
+The refine node reuses the single image for every object, so the outputs are one cut-out, one matte and one on-colour image per object.
+
+Clicks from the Points Editor are in the editor's own canvas pixels. The node reads the editor's size from its `bbox_mask` output and rescales the clicks and boxes to the real image size.
+
 ## Why not just use SAM3's mask?
 Compare the raw SAM3 mask with the refined matte in `assets/pipeline_result.png`.
 The raw mask has a hard, stair-stepped edge that looks cut out when composited.

@@ -15,4 +15,9 @@
 | Ghost trails on fast motion | Smoothing too strong | Lower `strength`, or lower `motion_threshold` |
 | CUDA out of memory | Frames too big | Lower `max_side` (1280 → 960) and use a shorter clip |
 | ComfyUI crashes or the PC freezes on long clips | All frames are held in RAM | Split the clip into ≤ 10 s parts |
+| "No points on the canvas" (image workflow) | The Points Editor needs at least one click | Shift+click the object, or for a text-only selection bypass the Points Editor (select it → **Ctrl+B**) |
+| "MAGIC ROTO found nothing to cut out" | No clicks, no boxes, and the text matched nothing | Add a click or box, or lower `threshold` / simplify the text |
+| Clicks land in the wrong place | Points Editor was sized for a different image | Drag the image you're working on onto the Points Editor again (it resizes to that image), and keep `bbox_mask → editor_mask` connected |
+| A click selects too much (e.g. a held object too) | SAM3 treats it as part of the same thing | Add a red point (Shift+right-click) on the part to exclude, or draw a box around just the part you want |
+| New MAGIC ROTO nodes missing after an update | ComfyUI server still running the old code | Fully restart the ComfyUI server (in ComfyUI Manager: **Restart**), not just the app window |
 | Preview video won't save | Codec option missing in older ComfyUI | Set the `SaveVideo` codec to `h264` in the node |

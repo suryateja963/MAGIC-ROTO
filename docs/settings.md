@@ -1,5 +1,22 @@
 # Settings reference
 
+## MAGIC ROTO: Select Objects (image workflow)
+
+| Setting / input | Default | What it does | Tips |
+|---|---|---|---|
+| `text` | empty | What to find by name. Comma-separate several terms; `term:N` keeps up to N of that term | Leave it empty to use only clicks and boxes. Without `:N`, each term keeps its single best match |
+| `threshold` | 0.4 | Confidence needed for a **text** match | Raise it if wrong things are found. Lower it if the object is missed |
+| `refine_iterations` | 2 | Extra SAM decoder passes that tighten each mask | 0 = raw detector mask. 2–3 is a good balance |
+| `positive_coords` / `negative_coords` | from Points Editor | Include and exclude clicks. **All clicks together make one object** | Add red (exclude) points to cut away parts SAM3 grabbed by mistake |
+| `bboxes` | from Points Editor | **Each box becomes its own object** | Draw boxes snug around the object |
+| `editor_mask` | Points Editor `bbox_mask` | Tells the node the editor's canvas size, so clicks land exactly on the image | Keep it connected |
+
+Outputs: `masks` (one per object, in the order points → boxes → text), `count`, and `labels` (e.g. `points, box1, text1`).
+
+## MAGIC ROTO: Transparent Cut-out
+
+No settings. Image + matte → RGBA image. Feed it to **Save Image** to get transparent PNGs.
+
 ## Run SAM3 Video Track (core ComfyUI node)
 
 | Setting | Default in workflow | What it does | When to change it |

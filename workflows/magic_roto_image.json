@@ -1,0 +1,1107 @@
+{
+  "id": "7d100d09-94a2-4a79-83d3-6945074ad573",
+  "revision": 0,
+  "last_node_id": 13,
+  "last_link_id": 19,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "MarkdownNote",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        440,
+        900
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "READ ME: How to use MAGIC ROTO (image)",
+      "properties": {},
+      "widgets_values": [
+        "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
+      ],
+      "widgets_values_named": {
+        "text": "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [
+        520,
+        80
+      ],
+      "size": [
+        340,
+        460
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            4,
+            11,
+            12,
+            17
+          ]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "1. Load Image",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "magic_roto_test.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "magic_roto_test.png",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 3,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        520,
+        600
+      ],
+      "size": [
+        340,
+        100
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "ckpt_name",
+          "name": "ckpt_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "ckpt_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "MODEL",
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            2
+          ]
+        },
+        {
+          "localized_name": "CLIP",
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            3
+          ]
+        },
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "links": null
+        }
+      ],
+      "title": "SAM3 model",
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "sam3.1_multiplex_fp16.safetensors"
+      ],
+      "widgets_values_named": {
+        "ckpt_name": "sam3.1_multiplex_fp16.safetensors"
+      }
+    },
+    {
+      "id": 4,
+      "type": "PointsEditor",
+      "pos": [
+        900,
+        80
+      ],
+      "size": [
+        560,
+        1254
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "bg_image",
+          "name": "bg_image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 1
+        },
+        {
+          "localized_name": "points_store",
+          "name": "points_store",
+          "type": "STRING",
+          "widget": {
+            "name": "points_store"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "coordinates",
+          "name": "coordinates",
+          "type": "STRING",
+          "widget": {
+            "name": "coordinates"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "neg_coordinates",
+          "name": "neg_coordinates",
+          "type": "STRING",
+          "widget": {
+            "name": "neg_coordinates"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "bbox_store",
+          "name": "bbox_store",
+          "type": "STRING",
+          "widget": {
+            "name": "bbox_store"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "bboxes",
+          "name": "bboxes",
+          "type": "STRING",
+          "widget": {
+            "name": "bboxes"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "bbox_format",
+          "name": "bbox_format",
+          "type": "COMBO",
+          "widget": {
+            "name": "bbox_format"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "normalize",
+          "name": "normalize",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "normalize"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "positive_coords",
+          "name": "positive_coords",
+          "type": "STRING",
+          "links": [
+            5
+          ]
+        },
+        {
+          "localized_name": "negative_coords",
+          "name": "negative_coords",
+          "type": "STRING",
+          "links": [
+            6
+          ]
+        },
+        {
+          "localized_name": "bbox",
+          "name": "bbox",
+          "type": "BBOX",
+          "links": [
+            7
+          ]
+        },
+        {
+          "localized_name": "bbox_mask",
+          "name": "bbox_mask",
+          "type": "MASK",
+          "links": [
+            8
+          ]
+        },
+        {
+          "localized_name": "cropped_image",
+          "name": "cropped_image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "2. Points Editor (Shift+click / Ctrl+drag)",
+      "properties": {
+        "Node name for S&R": "PointsEditor",
+        "points": "PointsEditor",
+        "neg_points": "PointsEditor"
+      },
+      "widgets_values": [
+        "{\"positive\":[],\"negative\":[]}",
+        "[]",
+        "[]",
+        "[]",
+        "[]",
+        "xyxy",
+        720,
+        1280,
+        false,
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "points_store": "{\"positive\":[],\"negative\":[]}",
+        "coordinates": "[]",
+        "neg_coordinates": "[]",
+        "bbox_store": "[]",
+        "bboxes": "[]",
+        "bbox_format": "xyxy",
+        "width": 720,
+        "height": 1280,
+        "normalize": false,
+        "PointsEditor": "",
+        "editor_buttons": ""
+      }
+    },
+    {
+      "id": 5,
+      "type": "MagicRotoSelect",
+      "pos": [
+        1500,
+        80
+      ],
+      "size": [
+        380,
+        330
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MODEL",
+          "link": 2
+        },
+        {
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 3
+        },
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 4
+        },
+        {
+          "localized_name": "positive_coords",
+          "name": "positive_coords",
+          "shape": 7,
+          "type": "STRING",
+          "link": 5
+        },
+        {
+          "localized_name": "negative_coords",
+          "name": "negative_coords",
+          "shape": 7,
+          "type": "STRING",
+          "link": 6
+        },
+        {
+          "localized_name": "bboxes",
+          "name": "bboxes",
+          "shape": 7,
+          "type": "BBOX",
+          "link": 7
+        },
+        {
+          "localized_name": "editor_mask",
+          "name": "editor_mask",
+          "shape": 7,
+          "type": "MASK",
+          "link": 8
+        },
+        {
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "threshold",
+          "name": "threshold",
+          "type": "FLOAT",
+          "widget": {
+            "name": "threshold"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "refine_iterations",
+          "name": "refine_iterations",
+          "type": "INT",
+          "widget": {
+            "name": "refine_iterations"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "masks",
+          "name": "masks",
+          "type": "MASK",
+          "links": [
+            9
+          ]
+        },
+        {
+          "localized_name": "count",
+          "name": "count",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "localized_name": "labels",
+          "name": "labels",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "3. Select Objects (points + boxes + text)",
+      "properties": {
+        "Node name for S&R": "MagicRotoSelect"
+      },
+      "widgets_values": [
+        "",
+        0.4,
+        2
+      ],
+      "widgets_values_named": {
+        "text": "",
+        "threshold": 0.4,
+        "refine_iterations": 2
+      }
+    },
+    {
+      "id": 6,
+      "type": "VitMatteTrimap",
+      "pos": [
+        1940,
+        80
+      ],
+      "size": [
+        380,
+        110
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 9
+        },
+        {
+          "localized_name": "erode_px",
+          "name": "erode_px",
+          "type": "INT",
+          "widget": {
+            "name": "erode_px"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "dilate_px",
+          "name": "dilate_px",
+          "type": "INT",
+          "widget": {
+            "name": "dilate_px"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "trimap",
+          "name": "trimap",
+          "type": "MASK",
+          "links": [
+            10
+          ]
+        }
+      ],
+      "title": "4. Mask to Trimap",
+      "properties": {
+        "Node name for S&R": "VitMatteTrimap"
+      },
+      "widgets_values": [
+        8,
+        16
+      ],
+      "widgets_values_named": {
+        "erode_px": 8,
+        "dilate_px": 16
+      }
+    },
+    {
+      "id": 7,
+      "type": "VitMatteRefine",
+      "pos": [
+        1940,
+        230
+      ],
+      "size": [
+        380,
+        160
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 11
+        },
+        {
+          "localized_name": "trimap",
+          "name": "trimap",
+          "type": "MASK",
+          "link": 10
+        },
+        {
+          "localized_name": "model_name",
+          "name": "model_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_side",
+          "name": "max_side",
+          "type": "INT",
+          "widget": {
+            "name": "max_side"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "white_point",
+          "name": "white_point",
+          "type": "FLOAT",
+          "widget": {
+            "name": "white_point"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "alpha",
+          "name": "alpha",
+          "type": "MASK",
+          "links": [
+            13,
+            15,
+            18
+          ]
+        }
+      ],
+      "title": "5. Refine Edges (VitMatte)",
+      "properties": {
+        "Node name for S&R": "VitMatteRefine"
+      },
+      "widgets_values": [
+        "vitmatte-small-composition-1k",
+        1280,
+        0.99
+      ],
+      "widgets_values_named": {
+        "model_name": "vitmatte-small-composition-1k",
+        "max_side": 1280,
+        "white_point": 0.99
+      }
+    },
+    {
+      "id": 8,
+      "type": "MatteCutout",
+      "pos": [
+        2360,
+        80
+      ],
+      "size": [
+        260,
+        60
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 12
+        },
+        {
+          "localized_name": "alpha",
+          "name": "alpha",
+          "type": "MASK",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "rgba",
+          "name": "rgba",
+          "type": "IMAGE",
+          "links": [
+            14
+          ]
+        }
+      ],
+      "title": "Transparent Cut-out",
+      "properties": {
+        "Node name for S&R": "MatteCutout"
+      }
+    },
+    {
+      "id": 9,
+      "type": "SaveImage",
+      "pos": [
+        2660,
+        80
+      ],
+      "size": [
+        380,
+        360
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "Save: transparent PNG",
+      "properties": {},
+      "widgets_values": [
+        "magic_roto/cutout"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "magic_roto/cutout"
+      }
+    },
+    {
+      "id": 10,
+      "type": "MaskToImage",
+      "pos": [
+        2360,
+        500
+      ],
+      "size": [
+        260,
+        40
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            16
+          ]
+        }
+      ],
+      "title": "Matte to image",
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 11,
+      "type": "SaveImage",
+      "pos": [
+        2660,
+        500
+      ],
+      "size": [
+        380,
+        360
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 16
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "Save: black & white matte",
+      "properties": {},
+      "widgets_values": [
+        "magic_roto/matte"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "magic_roto/matte"
+      }
+    },
+    {
+      "id": 12,
+      "type": "MattePreviewOnColor",
+      "pos": [
+        2360,
+        920
+      ],
+      "size": [
+        260,
+        90
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 17
+        },
+        {
+          "localized_name": "alpha",
+          "name": "alpha",
+          "type": "MASK",
+          "link": 18
+        },
+        {
+          "localized_name": "color",
+          "name": "color",
+          "type": "STRING",
+          "widget": {
+            "name": "color"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "title": "Preview on Colour",
+      "properties": {
+        "Node name for S&R": "MattePreviewOnColor"
+      },
+      "widgets_values": [
+        "#00FF00"
+      ],
+      "widgets_values_named": {
+        "color": "#00FF00"
+      }
+    },
+    {
+      "id": 13,
+      "type": "SaveImage",
+      "pos": [
+        2660,
+        920
+      ],
+      "size": [
+        380,
+        360
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 19
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "Save: object on solid colour",
+      "properties": {},
+      "widgets_values": [
+        "magic_roto/on_color"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "magic_roto/on_color"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      3,
+      0,
+      5,
+      0,
+      "MODEL"
+    ],
+    [
+      3,
+      3,
+      1,
+      5,
+      1,
+      "CLIP"
+    ],
+    [
+      4,
+      2,
+      0,
+      5,
+      2,
+      "IMAGE"
+    ],
+    [
+      5,
+      4,
+      0,
+      5,
+      3,
+      "STRING"
+    ],
+    [
+      6,
+      4,
+      1,
+      5,
+      4,
+      "STRING"
+    ],
+    [
+      7,
+      4,
+      2,
+      5,
+      5,
+      "BBOX"
+    ],
+    [
+      8,
+      4,
+      3,
+      5,
+      6,
+      "MASK"
+    ],
+    [
+      9,
+      5,
+      0,
+      6,
+      0,
+      "MASK"
+    ],
+    [
+      10,
+      6,
+      0,
+      7,
+      1,
+      "MASK"
+    ],
+    [
+      11,
+      2,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      12,
+      2,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      13,
+      7,
+      0,
+      8,
+      1,
+      "MASK"
+    ],
+    [
+      14,
+      8,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      7,
+      0,
+      10,
+      0,
+      "MASK"
+    ],
+    [
+      16,
+      10,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      17,
+      2,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ],
+    [
+      18,
+      7,
+      0,
+      12,
+      1,
+      "MASK"
+    ],
+    [
+      19,
+      12,
+      0,
+      13,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "INPUT",
+      "bounding": [
+        500,
+        0,
+        380,
+        740
+      ],
+      "color": "#3f789e",
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "SELECT",
+      "bounding": [
+        880,
+        0,
+        1030,
+        880
+      ],
+      "color": "#8A8",
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "REFINE",
+      "bounding": [
+        1920,
+        0,
+        420,
+        440
+      ],
+      "color": "#b58b2a",
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "OUTPUT",
+      "bounding": [
+        2340,
+        0,
+        720,
+        1300
+      ],
+      "color": "#a1309b",
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.5,
+      "offset": [
+        -420,
+        40
+      ]
+    }
+  },
+  "version": 0.4
+}

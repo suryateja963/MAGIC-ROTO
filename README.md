@@ -2,9 +2,9 @@
 
 # 🪄 MAGIC ROTO
 
-### Free AI rotoscoping for video, built in ComfyUI
+### Free AI rotoscoping for images and video, built in ComfyUI
 
-**Type what you want to cut out → get a clean, soft-edged alpha matte for every frame.**
+**Click, draw a box or type what you want to cut out → get a clean, soft-edged cut-out and matte.**
 
 SAM3 finds and tracks the object · VitMatte refines the edges · a temporal pass calms the flicker
 
@@ -60,7 +60,8 @@ MAGIC ROTO chains them: **SAM3 makes the rough cut and VitMatte cleans the edges
 
 | | Minimum | Tested on |
 |---|---|---|
-| ComfyUI | A version with the **core SAM3 nodes** (`SAM3 Detect`, `Run SAM3 Video Track`) | ComfyUI **0.38.2** |
+| ComfyUI | A version with the **core SAM3 nodes** (`SAM3 Detect`, `Run SAM3 Video Track`) | ComfyUI **0.38.2** and **0.40.0** |
+| Image workflow only | [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) for the **Points Editor** (click & box selection) | |
 | GPU | NVIDIA, ~6 GB VRAM | RTX 5060 Laptop, **8 GB** |
 | RAM | 16 GB (keep clips short) | 16 GB |
 | Python packages | `transformers`, `opencv-python`, `huggingface_hub` | transformers 5.8, PyTorch 2.10 + CUDA 13 |
@@ -109,11 +110,44 @@ This fetches both models from their official Hugging Face pages:
 You can also download them by hand and put them in the folders above.
 
 ### 4. Restart ComfyUI
-You should now see a **MAGIC ROTO** category with four nodes.
+You should now see a **MAGIC ROTO** category with six nodes.
 
 ---
 
-## Quick start
+## Quick start: image roto
+
+Cut one or more objects out of a single image. Every object you select is saved as its **own** files.
+
+![Image roto: a click, a box and a text prompt give three separate objects](assets/image_roto_result.png)
+<sub>One run: a <b>click</b> on the character → object 1 · a <b>box</b> around the water purifier → object 2 · the text <b>"shield"</b> → object 3.</sub>
+
+1. Drag [`workflows/magic_roto_image.json`](workflows/magic_roto_image.json) onto the ComfyUI canvas. It includes a READ ME note.
+2. **Load Image**: pick your image.
+3. **Points Editor**: drag the **same image** onto it (or select it and press Ctrl+V). It resizes itself to the image.
+4. Select what to cut out. Any mix of these works in the same run:
+
+   | How | Action | Counts as |
+   |---|---|---|
+   | Include point | **Shift + click** on the object | all points together = **1 object** |
+   | Exclude point | **Shift + right-click** | (refines the point object) |
+   | Box | **Ctrl + drag** | **each box = 1 object** |
+   | Text | type in **Select Objects → text**, e.g. `person` or `dog, ball` (`person:3` = up to 3) | **each match = 1 object** |
+
+5. Click **Run**. Results go to your ComfyUI output folder → `magic_roto/`:
+
+| File | What it is |
+|---|---|
+| `cutout_*.png` | **Transparent PNG cut-out** (RGBA) |
+| `matte_*.png` | **Black & white matte**: white = object |
+| `on_color_*.png` | The object on a solid colour (set it in *Preview on Colour*) |
+
+In each run, objects are saved in the order **points → boxes → text**.
+
+> **Text only, no clicks?** Bypass the Points Editor (select it, press **Ctrl+B**). Otherwise it stops with "No points on the canvas".
+
+---
+
+## Quick start: video roto
 
 1. Put a short clip (**3–10 seconds**) in `ComfyUI/input/` and name it `magic_roto_input.mp4`, or pick your own file in the node.
 2. Drag [`workflows/magic_roto_video_matte.json`](workflows/magic_roto_video_matte.json) onto the ComfyUI canvas.
@@ -136,6 +170,8 @@ You should now see a **MAGIC ROTO** category with four nodes.
 
 | Node | What it does |
 |---|---|
+| **MAGIC ROTO: Select Objects (points + boxes + text)** | Runs SAM3 once per prompt type so clicks, boxes and text all work together, and returns **one mask per object**. Maps Points Editor clicks exactly onto the image |
+| **MAGIC ROTO: Transparent Cut-out** | Image + matte → RGBA image that saves as a transparent PNG |
 | **MAGIC ROTO: Mask to Trimap** | Turns a hard mask into a trimap: sure object / sure background / unknown edge band |
 | **MAGIC ROTO: Refine Edges** | Runs VitMatte only inside the unknown band. Downscales big frames to fit VRAM and upscales the result back |
 | **MAGIC ROTO: Temporal Smooth** | Blends each frame's edge with the previous one where nothing moved, to reduce "edge boiling" |
@@ -179,7 +215,8 @@ Ideas and fixes: see [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Roadmap
 
-- [ ] Point and box prompts in the example workflow, alongside text
+- [x] Point and box prompts alongside text (image workflow)
+- [ ] Point and box prompts for the video workflow
 - [ ] Optical-flow-warped temporal stabilisation
 - [ ] Chunked processing for long clips
 - [ ] Option for the larger `vitmatte-base` model
@@ -195,7 +232,8 @@ MAGIC-ROTO/
 │   ├── __init__.py
 │   └── requirements.txt
 ├── workflows/
-│   └── magic_roto_video_matte.json    # ready-to-run workflow
+│   ├── magic_roto_image.json          # image roto: click / box / text
+│   └── magic_roto_video_matte.json    # video roto: text prompt + tracking
 ├── scripts/
 │   └── download_models.py             # fetches SAM3 + VitMatte
 ├── docs/

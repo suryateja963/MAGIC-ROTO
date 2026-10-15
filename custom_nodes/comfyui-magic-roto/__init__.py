@@ -98,14 +98,15 @@ class VitMatteRefine:
         mean = torch.tensor([0.5, 0.5, 0.5], device=device).view(1, 3, 1, 1)
         std = torch.tensor([0.5, 0.5, 0.5], device=device).view(1, 3, 1, 1)
 
-        frames = image.shape[0]
-        if trimap.shape[0] not in (1, frames):
-            raise ValueError(f"trimap has {trimap.shape[0]} frames but image has {frames}")
+        # One image with several object trimaps, several frames with one trimap, or frame-for-frame.
+        frames = max(image.shape[0], trimap.shape[0])
+        if image.shape[0] not in (1, frames) or trimap.shape[0] not in (1, frames):
+            raise ValueError(f"trimap has {trimap.shape[0]} entries but image has {image.shape[0]}")
         pbar = comfy.utils.ProgressBar(frames)
         out = []
         for i in range(frames):
-            img = image[i].to(device).permute(2, 0, 1).unsqueeze(0)          # 1,3,H,W
-            tri = trimap[i if trimap.shape[0] > 1 else 0].to(device)[None, None]
+            img = image[min(i, image.shape[0] - 1)].to(device).permute(2, 0, 1).unsqueeze(0)  # 1,3,H,W
+            tri = trimap[min(i, trimap.shape[0] - 1)].to(device)[None, None]
             h, w = img.shape[-2:]
             if tri.shape[-2:] != (h, w):
                 tri = F.interpolate(tri, size=(h, w), mode="nearest")
@@ -195,13 +196,119 @@ class MattePreviewOnColor:
         if len(hexcode) != 6:
             raise ValueError(f"color must be a 6-digit hex like #00FF00, got {color!r}")
         rgb = torch.tensor([int(hexcode[i:i + 2], 16) / 255.0 for i in (0, 2, 4)], dtype=image.dtype)
-        a = alpha.to(image.dtype)
-        if a.shape[-2:] != image.shape[1:3]:
-            a = F.interpolate(a[:, None], size=image.shape[1:3], mode="bilinear", align_corners=False)[:, 0]
-        if a.shape[0] == 1 and image.shape[0] > 1:
-            a = a.expand(image.shape[0], -1, -1)
-        a = a[..., None]
+        image, a = _match_batches(image[..., :3], alpha)
         return (image * a + rgb.view(1, 1, 1, 3) * (1 - a),)
+
+
+def _match_batches(image, alpha):
+    """Resizes alpha to the image and broadcasts whichever batch has one entry. Returns (image, alpha[..., None])."""
+    a = alpha.to(image.dtype)
+    if a.dim() == 2:
+        a = a[None]
+    if a.shape[-2:] != image.shape[1:3]:
+        a = F.interpolate(a[:, None], size=image.shape[1:3], mode="bilinear", align_corners=False)[:, 0]
+    n = max(image.shape[0], a.shape[0])
+    if image.shape[0] not in (1, n) or a.shape[0] not in (1, n):
+        raise ValueError(f"alpha has {a.shape[0]} entries but image has {image.shape[0]}")
+    return image.expand(n, -1, -1, -1), a.expand(n, -1, -1)[..., None]
+
+
+class MatteCutout:
+    """Footage + matte -> RGBA cut-out with a transparent background (saves as transparent PNG)."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"image": ("IMAGE",), "alpha": ("MASK",)}}
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("rgba",)
+    FUNCTION = "run"
+    CATEGORY = "MAGIC ROTO"
+
+    def run(self, image, alpha):
+        image, a = _match_batches(image[..., :3], alpha)
+        return (torch.cat([image, a], dim=-1),)
+
+
+class MagicRotoSelect:
+    """Runs SAM3 once per prompt type so points, boxes and text all work together.
+
+    Points (all green/red clicks) = one object. Each box = one object. Text = up to
+    N objects per comma-separated term ('person:3'). Returns one mask per object.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "model": ("MODEL",),
+            "clip": ("CLIP",),
+            "image": ("IMAGE",),
+            "text": ("STRING", {"default": "", "multiline": True,
+                                "tooltip": "Optional. What to find, e.g. 'person' or 'dog, ball'. Add ':N' for up to N of a term ('person:3'). Leave empty to use only clicks/boxes."}),
+            "threshold": ("FLOAT", {"default": 0.4, "min": 0.0, "max": 1.0, "step": 0.01,
+                                    "tooltip": "Text detection confidence. Raise it if wrong things are found, lower it if the object is missed."}),
+            "refine_iterations": ("INT", {"default": 2, "min": 0, "max": 5}),
+        }, "optional": {
+            "positive_coords": ("STRING", {"forceInput": True}),
+            "negative_coords": ("STRING", {"forceInput": True}),
+            "bboxes": ("BBOX", {"forceInput": True}),
+            "editor_mask": ("MASK", {"tooltip": "Connect the Points Editor's bbox_mask: it tells this node the editor's canvas size so clicks map exactly onto the image."}),
+        }}
+
+    RETURN_TYPES = ("MASK", "INT", "STRING")
+    RETURN_NAMES = ("masks", "count", "labels")
+    FUNCTION = "run"
+    CATEGORY = "MAGIC ROTO"
+
+    def run(self, model, clip, image, text, threshold, refine_iterations,
+            positive_coords=None, negative_coords=None, bboxes=None, editor_mask=None):
+        import json
+        from comfy_extras.nodes_sam3 import SAM3_Detect
+
+        image = image[:1]
+        H, W = image.shape[1:3]
+        sx = sy = 1.0
+        if editor_mask is not None and editor_mask.dim() >= 2:
+            eh, ew = editor_mask.shape[-2:]
+            sx, sy = W / ew, H / eh
+
+        def detect(**kw):
+            out = SAM3_Detect.execute(model=model, image=image, threshold=threshold,
+                                      refine_iterations=refine_iterations, individual_masks=True, **kw)
+            return out.result[0]
+
+        def scaled(points_json):
+            pts = json.loads(points_json) if points_json else []
+            return [{"x": round(p["x"] * sx), "y": round(p["y"] * sy)} for p in pts]
+
+        masks, labels = [], []
+        pos, neg = scaled(positive_coords), scaled(negative_coords)
+        if pos:
+            m = detect(positive_coords=json.dumps(pos), negative_coords=json.dumps(neg) if neg else None)
+            masks.append(m[:1])
+            labels.append("points")
+
+        boxes = []
+        for b in (bboxes or []):
+            x0, y0, x1, y1 = (float(v) for v in b[:4])
+            if x1 > x0 and y1 > y0:
+                boxes.append({"x": x0 * sx, "y": y0 * sy, "width": (x1 - x0) * sx, "height": (y1 - y0) * sy})
+        if boxes:
+            m = detect(bboxes=boxes)
+            masks.append(m)
+            labels += [f"box{i + 1}" for i in range(m.shape[0])]
+
+        if text.strip():
+            cond = clip.encode_from_tokens_scheduled(clip.tokenize(text.strip()))
+            m = detect(conditioning=cond)
+            masks.append(m)
+            labels += [f"text{i + 1}" for i in range(m.shape[0])]
+
+        if not masks or sum(m.shape[0] for m in masks) == 0:
+            raise ValueError("MAGIC ROTO found nothing to cut out. Shift+click the object or Ctrl+drag a box "
+                             "in the Points Editor, or type what to find in 'text' (try lowering threshold).")
+        out = torch.cat([m.float().cpu() for m in masks], dim=0)
+        return (out, out.shape[0], ", ".join(labels))
 
 
 NODE_CLASS_MAPPINGS = {
@@ -209,10 +316,14 @@ NODE_CLASS_MAPPINGS = {
     "VitMatteRefine": VitMatteRefine,
     "MatteTemporalSmooth": MatteTemporalSmooth,
     "MattePreviewOnColor": MattePreviewOnColor,
+    "MatteCutout": MatteCutout,
+    "MagicRotoSelect": MagicRotoSelect,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "VitMatteTrimap": "MAGIC ROTO: Mask to Trimap",
     "VitMatteRefine": "MAGIC ROTO: Refine Edges",
     "MatteTemporalSmooth": "MAGIC ROTO: Temporal Smooth",
     "MattePreviewOnColor": "MAGIC ROTO: Preview on Colour",
+    "MatteCutout": "MAGIC ROTO: Transparent Cut-out",
+    "MagicRotoSelect": "MAGIC ROTO: Select Objects (points + boxes + text)",
 }

@@ -290,6 +290,14 @@ class MagicRotoSelect:
 
         boxes = []
         for b in (bboxes or []):
+            # Points Editor sends (x0, y0, x1, y1) tuples, or its raw [{}] placeholder when no box is drawn.
+            if isinstance(b, dict):
+                if not all(k in b for k in ("startX", "startY", "endX", "endY")):
+                    continue
+                b = (min(b["startX"], b["endX"]), min(b["startY"], b["endY"]),
+                     max(b["startX"], b["endX"]), max(b["startY"], b["endY"]))
+            elif not isinstance(b, (list, tuple)) or len(b) < 4:
+                continue
             x0, y0, x1, y1 = (float(v) for v in b[:4])
             if x1 > x0 and y1 > y0:
                 boxes.append({"x": x0 * sx, "y": y0 * sy, "width": (x1 - x0) * sx, "height": (y1 - y0) * sy})

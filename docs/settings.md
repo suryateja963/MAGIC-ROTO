@@ -17,6 +17,21 @@ Outputs: `masks` (one per object, in the order points → boxes → text), `coun
 
 No settings. Image + matte → RGBA image. Feed it to **Save Image** to get transparent PNGs.
 
+## MAGIC ROTO: Remove Green Spill / Clean Edge Colours
+
+Put it between your footage and the cut-out / preview nodes. It changes colours only, never the matte.
+
+| Setting | Default | What it does | Tips |
+|---|---|---|---|
+| `screen_color` | none (in the workflows) | `green` / `blue` removes that screen's spill. `none` only fixes edge colours | Use `green` for green-screen footage, `none` for normal footage |
+| `despill_method` | balanced (keeps yellows) | **Balanced:** caps green at the brighter of red/blue, so yellow, orange and skin tones stay true. **Strong:** caps it at their average, removing more spill but shifting yellows toward orange | Start with balanced. Try strong only if a green tint remains on neutral/grey areas |
+| `despill_strength` | 1.0 | How much of the excess green/blue to remove | Lower it if genuinely green parts of the subject go grey |
+| `despill_area` | whole subject | `whole subject` also removes green light bounced onto the subject. `edges only` protects green objects (a green shirt) | |
+| `edge_color_fix` | on | Replaces the background colour mixed into soft edges with colour pulled in from the solid part of the subject | Turn off only to compare |
+| `edge_reach_px` | 20 | How far colour is pulled in (about 3× this value) | Raise it (30–40) for very wide fur/hair edges |
+
+Tested on a green-screen lion: the measured green excess on the subject dropped from 1.42 to 0.01, and yellow fur on non-screen footage kept the same average colour.
+
 ## Run SAM3 Video Track (core ComfyUI node)
 
 | Setting | Default in workflow | What it does | When to change it |

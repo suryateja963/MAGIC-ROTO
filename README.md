@@ -110,7 +110,7 @@ This fetches both models from their official Hugging Face pages:
 You can also download them by hand and put them in the folders above.
 
 ### 4. Restart ComfyUI
-You should now see a **MAGIC ROTO** category with six nodes.
+You should now see a **MAGIC ROTO** category with seven nodes.
 
 ---
 
@@ -143,6 +143,8 @@ Cut one or more objects out of a single image. Every object you select is saved 
 
 In each run, objects are saved in the order **points → boxes → text**.
 
+> **Green or blue screen footage?** In **Clean edge colours**, set `screen_color` to `green` (or `blue`) to remove the coloured fringe. Leave it on `none` for normal footage.
+
 > **Text only, no clicks?** Bypass the Points Editor (select it, press **Ctrl+B**). Otherwise it stops with "No points on the canvas".
 
 ---
@@ -172,6 +174,7 @@ In each run, objects are saved in the order **points → boxes → text**.
 |---|---|
 | **MAGIC ROTO: Select Objects (points + boxes + text)** | Runs SAM3 once per prompt type so clicks, boxes and text all work together, and returns **one mask per object**. Maps Points Editor clicks exactly onto the image |
 | **MAGIC ROTO: Transparent Cut-out** | Image + matte → RGBA image that saves as a transparent PNG |
+| **MAGIC ROTO: Remove Green Spill / Clean Edge Colours** | Removes green/blue screen spill and replaces the background colour mixed into soft edges with the subject's own colour, so cut-outs have no coloured fringe. The matte is not changed |
 | **MAGIC ROTO: Mask to Trimap** | Turns a hard mask into a trimap: sure object / sure background / unknown edge band |
 | **MAGIC ROTO: Refine Edges** | Runs VitMatte only inside the unknown band. Downscales big frames to fit VRAM and upscales the result back |
 | **MAGIC ROTO: Temporal Smooth** | Blends each frame's edge with the previous one where nothing moved, to reduce "edge boiling" |
@@ -207,6 +210,7 @@ Rough guidance: keep clips **≤ 10 s** at 1080p on a 16 GB RAM machine, because
 - **No per-frame manual correction yet.** If SAM3 picks the wrong thing, change the prompt or threshold and run again.
 - **Edge stabilisation is basic.** It's a motion-gated blend, not optical-flow warped, so very fast motion can leave slight trails when `strength` is high.
 - **Transparent and glowing objects** are matted as a solid shape plus a soft edge. True see-through transparency in the alpha isn't recovered.
+- **Green-screen footage:** a classic chroma keyer (e.g. Resolve's 3D Keyer) often beats AI segmentation on fine fur. MAGIC ROTO's *Clean edge colours* removes spill, but it can't fix places where the matte itself includes background.
 - **Long clips** use a lot of RAM.
 
 Ideas and fixes: see [docs/troubleshooting.md](docs/troubleshooting.md).

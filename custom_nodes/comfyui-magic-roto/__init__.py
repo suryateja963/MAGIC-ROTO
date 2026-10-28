@@ -196,8 +196,35 @@ class MattePreviewOnColor:
         if len(hexcode) != 6:
             raise ValueError(f"color must be a 6-digit hex like #00FF00, got {color!r}")
         rgb = torch.tensor([int(hexcode[i:i + 2], 16) / 255.0 for i in (0, 2, 4)], dtype=image.dtype)
-        image, a = _match_batches(image[..., :3], alpha)
-        return (image * a + rgb.view(1, 1, 1, 3) * (1 - a),)
+        # One frame at a time, so long clips don't need extra full-size temporary copies in RAM.
+        n, h, w = _batch_size(image, alpha), image.shape[1], image.shape[2]
+        out = torch.empty((n, h, w, 3), dtype=image.dtype)
+        for i, img, a in _frames(image, alpha):
+            out[i] = img * a[..., None] + rgb * (1 - a[..., None])
+        return (out,)
+
+
+def _batch_size(image, alpha):
+    n = max(image.shape[0], alpha.shape[0] if alpha.dim() == 3 else 1)
+    a_n = alpha.shape[0] if alpha.dim() == 3 else 1
+    if image.shape[0] not in (1, n) or a_n not in (1, n):
+        raise ValueError(f"alpha has {a_n} entries but image has {image.shape[0]}")
+    return n
+
+
+def _frames(image, alpha, device=None):
+    """Yields (index, image[H,W,3], alpha[H,W]) one frame at a time, alpha resized to the image."""
+    if alpha.dim() == 2:
+        alpha = alpha[None]
+    h, w = image.shape[1:3]
+    for i in range(_batch_size(image, alpha)):
+        img = image[min(i, image.shape[0] - 1)][..., :3]
+        a = alpha[min(i, alpha.shape[0] - 1)].to(image.dtype)
+        if device is not None:
+            img, a = img.to(device), a.to(device)
+        if a.shape != (h, w):
+            a = F.interpolate(a[None, None], size=(h, w), mode="bilinear", align_corners=False)[0, 0]
+        yield i, img, a
 
 
 def _match_batches(image, alpha):
@@ -228,6 +255,84 @@ class MatteCutout:
     def run(self, image, alpha):
         image, a = _match_batches(image[..., :3], alpha)
         return (torch.cat([image, a], dim=-1),)
+
+
+def _box_blur(x, radius, passes=3):
+    """Approximate Gaussian blur of x[C,H,W] by repeated box filters (edge-aware averaging)."""
+    k = 2 * radius + 1
+    x = x[None]
+    for _ in range(passes):
+        x = F.avg_pool2d(x, k, stride=1, padding=radius, count_include_pad=False)
+    return x[0]
+
+
+class MatteCleanEdges:
+    """Removes green/blue screen spill and fixes edge colours so cut-outs don't carry a coloured fringe.
+
+    1. Despill: caps the screen channel at the brighter of the other two ("balanced", keeps yellows),
+       or at their average ("strong").
+    2. Edge colour fix: semi-transparent edge pixels still contain background colour mixed in. They are
+       replaced by colour pulled inward from the nearby solid part of the subject, more strongly the more
+       transparent the pixel is. The matte itself is not changed.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "image": ("IMAGE",),
+            "alpha": ("MASK",),
+            "screen_color": (["green", "blue", "none"], {"default": "green",
+                             "tooltip": "Colour of the screen behind the subject. 'none' skips despill and only fixes edge colours."}),
+            "despill_method": (["balanced (keeps yellows)", "strong (average)"], {"default": "balanced (keeps yellows)",
+                               "tooltip": "Balanced caps green at the brighter of red/blue, so yellow, orange and skin keep their colour. Strong caps it at their average: removes more spill but shifts yellows towards orange."}),
+            "despill_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.05,
+                                           "tooltip": "1 = remove all excess green/blue. Lower it if real green/blue parts of the subject turn grey."}),
+            "despill_area": (["whole subject", "edges only"], {"default": "whole subject",
+                             "tooltip": "'whole subject' also removes green light bounced onto the subject. 'edges only' protects genuinely green objects."}),
+            "edge_color_fix": ("BOOLEAN", {"default": True,
+                               "tooltip": "Replace the background colour mixed into soft edges with the subject's own colour."}),
+            "edge_reach_px": ("INT", {"default": 20, "min": 1, "max": 64,
+                              "tooltip": "How far (roughly x3) colour is pulled in from the solid subject. Raise it for wide fur/hair edges."}),
+        }}
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "run"
+    CATEGORY = "MAGIC ROTO"
+
+    def run(self, image, alpha, screen_color, despill_method, despill_strength, despill_area, edge_color_fix, edge_reach_px):
+        device = mm.get_torch_device()
+        n, h, w = _batch_size(image, alpha), image.shape[1], image.shape[2]
+        out = torch.empty((n, h, w, 3), dtype=image.dtype)
+        pbar = comfy.utils.ProgressBar(n)
+        for i, img, a in _frames(image, alpha, device):
+            c = img.float().permute(2, 0, 1).clone()       # 3,H,W
+            a = a.float()
+
+            if screen_color != "none" and despill_strength > 0:
+                s = 1 if screen_color == "green" else 2
+                o1, o2 = [ch for ch in (0, 1, 2) if ch != s]
+                limit = torch.maximum(c[o1], c[o2]) if despill_method.startswith("balanced") else (c[o1] + c[o2]) / 2
+                excess = (c[s] - limit).clamp(min=0)
+                weight = despill_strength * (a > 0.004).float()
+                if despill_area == "edges only":
+                    band = ((a > 0.004) & (a < 0.98)).float()
+                    band = F.max_pool2d(band[None, None], 2 * edge_reach_px + 1, stride=1, padding=edge_reach_px)[0, 0]
+                    weight = weight * band
+                c[s] = c[s] - excess * weight
+
+            if edge_color_fix:
+                solid = (a >= 0.95).float()[None]
+                den = _box_blur(solid, edge_reach_px)
+                num = _box_blur(c * solid, edge_reach_px)
+                est = num / den.clamp(min=1e-4)
+                t = ((0.95 - a) / 0.95).clamp(0, 1) * (den[0] > 1e-3).float()
+                c = c * (1 - t) + est * t
+
+            out[i] = c.clamp(0, 1).permute(1, 2, 0).to(out.dtype).cpu()
+            pbar.update(1)
+        mm.soft_empty_cache()
+        return (out,)
 
 
 class MagicRotoSelect:
@@ -325,6 +430,7 @@ NODE_CLASS_MAPPINGS = {
     "MatteTemporalSmooth": MatteTemporalSmooth,
     "MattePreviewOnColor": MattePreviewOnColor,
     "MatteCutout": MatteCutout,
+    "MatteCleanEdges": MatteCleanEdges,
     "MagicRotoSelect": MagicRotoSelect,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -333,5 +439,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MatteTemporalSmooth": "MAGIC ROTO: Temporal Smooth",
     "MattePreviewOnColor": "MAGIC ROTO: Preview on Colour",
     "MatteCutout": "MAGIC ROTO: Transparent Cut-out",
+    "MatteCleanEdges": "MAGIC ROTO: Remove Green Spill / Clean Edge Colours",
     "MagicRotoSelect": "MAGIC ROTO: Select Objects (points + boxes + text)",
 }

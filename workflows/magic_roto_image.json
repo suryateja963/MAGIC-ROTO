@@ -1,8 +1,8 @@
 {
   "id": "7d100d09-94a2-4a79-83d3-6945074ad573",
   "revision": 0,
-  "last_node_id": 13,
-  "last_link_id": 19,
+  "last_node_id": 14,
+  "last_link_id": 23,
   "nodes": [
     {
       "id": 1,
@@ -23,10 +23,10 @@
       "title": "READ ME: How to use MAGIC ROTO (image)",
       "properties": {},
       "widgets_values": [
-        "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
+        "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Green / blue screen footage?\nIn **Clean edge colours**, set **screen_color** to **green** (or blue). It removes the coloured fringe and spill from the cut-out. Leave it on **none** for normal footage.\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
       ],
       "widgets_values_named": {
-        "text": "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
+        "text": "# 🪄 MAGIC ROTO: Image Roto\n**SAM3 selects the object · VitMatte refines the edges.**\nEach object you select is saved as its **own** files.\n\n## Steps\n1. **Load Image**: pick your image.\n2. **Points Editor**: drag the **same image** onto it (or select the node and Ctrl+V). It sizes itself to the image.\n3. **Select what to roto.** Use any of these, together or alone:\n   - **Shift + click** on the object → green point (include)\n   - **Shift + right-click** → red point (exclude)\n   - **Ctrl + drag** → box. *Every box = a separate object.*\n   - **text** box in *Select Objects*: e.g. **\"person\"** or **\"dog, ball\"**. Use **\"person:3\"** for up to 3.\n4. Click **Run**.\n\n## How objects are counted\n- All points together = **1 object**\n- Each box = **1 object**\n- Each text match = **1 object**\n\n## Output (your ComfyUI output folder → magic_roto)\n- **cutout_*.png**: transparent PNG cut-out\n- **matte_*.png**: black & white matte\n- **on_color_*.png**: object on a solid colour (change it in *Preview on Colour*)\nIn each run, objects are saved in the order **points → boxes → text**. File numbers keep counting up across runs (cutout_00001, 00002, …).\n\n## Green / blue screen footage?\nIn **Clean edge colours**, set **screen_color** to **green** (or blue). It removes the coloured fringe and spill from the cut-out. Leave it on **none** for normal footage.\n\n## Tips\n- **Text only, no clicks?** Select the Points Editor and press **Ctrl+B** (bypass), or it stops with \"No points on the canvas\".\n- Hard, blocky edges → raise **dilate_px** (20 → 35).\n- Halo around the object → lower **dilate_px** or raise **erode_px**.\n- Text finds the wrong thing → raise **threshold**. Misses it → lower it."
       },
       "color": "#432",
       "bgcolor": "#653"
@@ -74,8 +74,7 @@
             1,
             4,
             11,
-            12,
-            17
+            20
           ]
         },
         {
@@ -587,7 +586,8 @@
           "links": [
             13,
             15,
-            18
+            18,
+            21
           ]
         }
       ],
@@ -618,14 +618,14 @@
         60
       ],
       "flags": {},
-      "order": 7,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
           "localized_name": "image",
           "name": "image",
           "type": "IMAGE",
-          "link": 12
+          "link": 22
         },
         {
           "localized_name": "alpha",
@@ -661,7 +661,7 @@
         360
       ],
       "flags": {},
-      "order": 10,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -709,7 +709,7 @@
         40
       ],
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -746,7 +746,7 @@
         360
       ],
       "flags": {},
-      "order": 11,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -794,14 +794,14 @@
         90
       ],
       "flags": {},
-      "order": 9,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "localized_name": "image",
           "name": "image",
           "type": "IMAGE",
-          "link": 17
+          "link": 23
         },
         {
           "localized_name": "alpha",
@@ -852,7 +852,7 @@
         360
       ],
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -886,6 +886,120 @@
       ],
       "widgets_values_named": {
         "filename_prefix": "magic_roto/on_color"
+      }
+    },
+    {
+      "id": 14,
+      "type": "MatteCleanEdges",
+      "pos": [
+        2360,
+        -240
+      ],
+      "size": [
+        469.4029296875,
+        198
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 20
+        },
+        {
+          "localized_name": "alpha",
+          "name": "alpha",
+          "type": "MASK",
+          "link": 21
+        },
+        {
+          "localized_name": "screen_color",
+          "name": "screen_color",
+          "type": "COMBO",
+          "widget": {
+            "name": "screen_color"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "despill_method",
+          "name": "despill_method",
+          "type": "COMBO",
+          "widget": {
+            "name": "despill_method"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "despill_strength",
+          "name": "despill_strength",
+          "type": "FLOAT",
+          "widget": {
+            "name": "despill_strength"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "despill_area",
+          "name": "despill_area",
+          "type": "COMBO",
+          "widget": {
+            "name": "despill_area"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "edge_color_fix",
+          "name": "edge_color_fix",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "edge_color_fix"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "edge_reach_px",
+          "name": "edge_reach_px",
+          "type": "INT",
+          "widget": {
+            "name": "edge_reach_px"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            22,
+            23
+          ]
+        }
+      ],
+      "title": "Clean edge colours (despill)",
+      "properties": {
+        "Node name for S&R": "MatteCleanEdges"
+      },
+      "widgets_values": [
+        "none",
+        "balanced (keeps yellows)",
+        1,
+        "whole subject",
+        true,
+        20
+      ],
+      "widgets_values_named": {
+        "screen_color": "none",
+        "despill_method": "balanced (keeps yellows)",
+        "despill_strength": 1,
+        "despill_area": "whole subject",
+        "edge_color_fix": true,
+        "edge_reach_px": 20
       }
     }
   ],
@@ -979,14 +1093,6 @@
       "IMAGE"
     ],
     [
-      12,
-      2,
-      0,
-      8,
-      0,
-      "IMAGE"
-    ],
-    [
       13,
       7,
       0,
@@ -1019,14 +1125,6 @@
       "IMAGE"
     ],
     [
-      17,
-      2,
-      0,
-      12,
-      0,
-      "IMAGE"
-    ],
-    [
       18,
       7,
       0,
@@ -1039,6 +1137,38 @@
       12,
       0,
       13,
+      0,
+      "IMAGE"
+    ],
+    [
+      20,
+      2,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      21,
+      7,
+      0,
+      14,
+      1,
+      "MASK"
+    ],
+    [
+      22,
+      14,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      14,
+      0,
+      12,
       0,
       "IMAGE"
     ]
@@ -1085,9 +1215,9 @@
       "title": "OUTPUT",
       "bounding": [
         2340,
-        0,
+        -300,
         720,
-        1300
+        1600
       ],
       "color": "#a1309b",
       "flags": {}
@@ -1099,7 +1229,7 @@
       "scale": 0.5,
       "offset": [
         -420,
-        40
+        200
       ]
     }
   },

@@ -12,10 +12,11 @@
   "11": {"class_type": "SaveImage", "inputs": {"images": ["10", 0], "filename_prefix": "magic_roto/alpha"}, "_meta": {"title": "7. Save alpha PNG sequence (import into Resolve)"}},
   "12": {"class_type": "CreateVideo", "inputs": {"images": ["10", 0], "fps": ["2", 2]}},
   "13": {"class_type": "SaveVideo", "inputs": {"video": ["12", 0], "filename_prefix": "magic_roto/alpha_preview", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: refined matte"}},
-  "14": {"class_type": "MattePreviewOnColor", "inputs": {"image": ["2", 0], "alpha": ["9", 0], "color": "#00FF00"}, "_meta": {"title": "Cut-out on green"}},
+  "14": {"class_type": "MattePreviewOnColor", "inputs": {"image": ["21", 0], "alpha": ["9", 0], "color": "#00FF00"}, "_meta": {"title": "Cut-out on green"}},
   "16": {"class_type": "CreateVideo", "inputs": {"images": ["14", 0], "fps": ["2", 2]}},
   "17": {"class_type": "SaveVideo", "inputs": {"video": ["16", 0], "filename_prefix": "magic_roto/on_green", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: cut-out on green"}},
   "18": {"class_type": "MaskToImage", "inputs": {"mask": ["6", 0]}},
   "19": {"class_type": "CreateVideo", "inputs": {"images": ["18", 0], "fps": ["2", 2]}},
-  "20": {"class_type": "SaveVideo", "inputs": {"video": ["19", 0], "filename_prefix": "magic_roto/sam_raw", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: raw SAM3 mask (before VitMatte)"}}
+  "20": {"class_type": "SaveVideo", "inputs": {"video": ["19", 0], "filename_prefix": "magic_roto/sam_raw", "format": "auto", "format.codec": "h264"}, "_meta": {"title": "Preview: raw SAM3 mask (before VitMatte)"}},
+  "21": {"class_type": "MatteCleanEdges", "inputs": {"image": ["2", 0], "alpha": ["9", 0], "screen_color": "none", "despill_method": "balanced (keeps yellows)", "despill_strength": 1.0, "despill_area": "whole subject", "edge_color_fix": true, "edge_reach_px": 20}, "_meta": {"title": "Clean edge colours (screen_color: green/blue for screen footage, none otherwise)"}}
 }

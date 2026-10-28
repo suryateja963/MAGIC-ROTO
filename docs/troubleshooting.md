@@ -20,4 +20,9 @@
 | Clicks land in the wrong place | Points Editor was sized for a different image | Drag the image you're working on onto the Points Editor again (it resizes to that image), and keep `bbox_mask → editor_mask` connected |
 | A click selects too much (e.g. a held object too) | SAM3 treats it as part of the same thing | Add a red point (Shift+right-click) on the part to exclude, or draw a box around just the part you want |
 | New MAGIC ROTO nodes missing after an update | ComfyUI server still running the old code | Fully restart the ComfyUI server (in ComfyUI Manager: **Restart**), not just the app window |
+| Green (or blue) fringe around fur/hair on green-screen footage | Spill: the screen colour is baked into edge pixels | In **Clean edge colours** set `screen_color` to `green`. If a tint remains, raise `edge_reach_px` or try `despill_method: strong` |
+| Subject turns more orange after despill | `strong (average)` despill also cuts green from yellow colours | Use `balanced (keeps yellows)` |
+| A coloured patch remains even after despill | The matte itself includes background there (it isn't an edge colour problem) | Lower `dilate_px`, or use a chroma keyer for screen footage |
+| "not enough memory" on long clips | Every frame is held in RAM (1080p ≈ 25 MB per frame) | Keep 1080p clips to ~5 s (≤150 frames), or use a 720p copy |
+| Ghost shapes / smoky wide edges on video | Temporal Smooth set too high (e.g. strength 0.95, motion_threshold 1.0) | Use strength 0.3 and motion_threshold 0.25, or 0 to turn it off |
 | Preview video won't save | Codec option missing in older ComfyUI | Set the `SaveVideo` codec to `h264` in the node |
